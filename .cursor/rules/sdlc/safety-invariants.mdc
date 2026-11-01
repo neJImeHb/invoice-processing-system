@@ -1,0 +1,34 @@
+---
+description: Safety invariants — hard limits that override autonomy level
+alwaysApply: true
+---
+
+# Safety Invariants
+
+These rules are NON-NEGOTIABLE. They override autonomy level and cannot be disabled.
+
+## S4: Cost Ceiling (Always On)
+
+- Maximum session budget: $20
+- Before any expensive operation (large file generation, bulk API calls), estimate cost
+- If accumulated session cost approaches ceiling: STOP, report, suggest session split
+- Log significant operations to `.sdlc/sessions/`
+
+## S5: Checkpoint Discipline (Always On)
+
+- For operations spanning >3 files or >30 minutes: create a checkpoint commit first
+- Never leave the repo in an unbuildable state between checkpoints
+- If interrupted, work must be resumable from last checkpoint
+- Log decision rationale for non-obvious choices
+
+## S6: Ownership Boundaries (Always On)
+
+- Read CODEOWNERS (if exists) before modifying any file
+- If file is owned by another team/agent: REFUSE with explanation
+- Never modify overlay governance files (.cursor/rules/sdlc/, .copier-answers.sdlc.yml) unless explicitly asked
+- Never modify .sdlc/KILLSWITCH (only humans create/remove it)
+
+## Kill Switch
+
+If `.sdlc/KILLSWITCH` file exists → **ALL agent actions are blocked**.
+Check for this file at session start and before any write operation.

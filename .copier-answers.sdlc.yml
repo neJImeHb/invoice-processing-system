@@ -1,0 +1,18 @@
+# Changes here will be overwritten by Copier; NEVER edit by hand.
+_commit: None
+_src_path: C:\programming projects\saas-constitution\_sdlc-overlay
+
+project_name: "Invoice Processing System"
+project_description: "Full-stack application for uploading and processing invoices, with realtime status and an AI assistant that can query results and take actions."
+primary_language: "mixed"
+agent_autonomy_level: "L3-act-with-approval"
+include_spec_workflow: true
+include_compound_memory: true
+include_multi_agent_sync: false
+tracking_mode: "team"
+include_ci_gate: false
+verification_command: "make verify"
+max_task_budget_usd: 20
+safety_advisory_output: false
+safety_multi_tenant: false
+safety_external_side_effects: false

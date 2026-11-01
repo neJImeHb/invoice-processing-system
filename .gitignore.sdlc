@@ -1,0 +1,17 @@
+# AI SDLC Overlay — gitignore pattern source
+# Applied automatically on `copier copy --trust` / `copier update --trust`.
+# Re-apply manually: make -f Makefile.sdlc sdlc-apply-ignore
+# TEAM target: project .gitignore (ephemeral paths; overlay files are committed)
+
+
+
+# Session files (always ephemeral, per-agent-run)
+.sdlc/sessions/*
+!.sdlc/sessions/.gitkeep
+
+# Multi-agent sync (always ephemeral)
+.sdlc/sync/locks/*
+!.sdlc/sync/locks/.gitkeep
+.sdlc/sync/heartbeats/*
+!.sdlc/sync/heartbeats/.gitkeep
+

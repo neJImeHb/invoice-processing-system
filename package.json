@@ -1,0 +1,26 @@
+{
+  "name": "invoice-processing-system",
+  "private": true,
+  "version": "0.0.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "verify": "npm run typecheck --workspaces --if-present && npm run lint --workspaces --if-present && npm run test:unit --workspaces --if-present && npm run test:integration --workspaces --if-present && npm run test:integration:pipeline && npm run test:integration:chat && npm run test:integration:agent-actions && npm run test:e2e:upload && npm run test:e2e:retry && npm run test:e2e:chat",
+    "test:integration:chat": "npm run test:integration:chat -w server",
+    "test:integration:agent-actions": "npm run test:integration:agent-actions -w server",
+    "test:e2e:upload": "npm run test:e2e:upload -w client",
+    "test:e2e:retry": "npm run test:e2e:retry -w client",
+    "test:e2e:chat": "npm run test:e2e:chat -w client",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test:unit": "npm run test:unit --workspaces --if-present",
+    "test:integration:pipeline": "npm run test:integration:pipeline -w server",
+    "live:invoice": "npm run live:invoice -w server --",
+    "dev": "node scripts/dev.mjs"
+  }
+}

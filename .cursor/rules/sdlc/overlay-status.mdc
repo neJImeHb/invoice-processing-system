@@ -1,0 +1,40 @@
+---
+description: AI SDLC overlay status and update instructions
+alwaysApply: true
+---
+
+# AI SDLC Overlay
+
+This project uses the AI SDLC overlay from saas-constitution.
+
+- **Version:** `None`
+- **Autonomy:** L3-act-with-approval
+- **Verification:** `make verify`
+- **Language:** mixed
+- **Tracking:** team (overlay files committed; ephemeral paths in `.gitignore`)
+## Update
+
+Check version: `make sdlc-version`
+Check health: `make sdlc-health`
+Refresh git ignore rules: `make sdlc-apply-ignore`
+Remove git ignore rules: `make sdlc-remove-ignore`
+Update: `make sdlc-update` (or `copier update --trust -a .copier-answers.sdlc.yml`)
+Preview: `copier update --trust -a .copier-answers.sdlc.yml --pretend`
+
+Changelog: see CHANGELOG.sdlc.md in saas-constitution repo for what changed between versions.
+
+## Session Start Protocol
+
+- Check `.sdlc/KILLSWITCH` — if exists, refuse ALL actions and report
+- Read `.sdlc/context/project-overview.md` for project understanding
+- Read `.sdlc/context/conventions.md` for coding standards
+- Read `.sdlc/learnings/LEARNINGS.jsonl` (last 20 entries) for past lessons
+- Read `.sdlc/trust-ledger.json` for current autonomy and trust score
+
+## Quick Reference
+
+- Spec workflow: `.sdlc/specs/` + templates in `.sdlc/templates/`
+- Verification: `make verify`
+- Autonomy level: L3-act-with-approval
+- Kill switch: `make sdlc-killswitch` / `make sdlc-resume`
+- Health check: `make sdlc-health`

@@ -1,0 +1,24 @@
+---
+description: Require source citations for stakeholder-sourced requirements
+globs: ".sdlc/**"
+---
+
+# Evidence Binding
+
+When requirements originate from external stakeholders (meeting transcripts, interviews, Slack threads, tickets, screenshots), each requirement MUST cite its source.
+
+## Rules
+
+1. **Functional requirements** in `requirements.md` include an "Evidence" column linking to the source
+2. **Acceptable evidence types:**
+   - Meeting transcript quote (with timestamp if available)
+   - Screenshot reference (with timing/context)
+   - Ticket/issue URL
+   - Stakeholder name + date of conversation
+   - "developer-authored" (for requirements written directly by the developer)
+3. **Uncited requirements** from external sources use `[NEEDS VERIFICATION]` marker — treated like `[NEEDS CLARIFICATION]` and surfaced at Gate 1
+4. **When NOT required:** Developer-authored requirements for internal refactors, tech debt, or CI/CD improvements do not need external evidence
+
+## Why
+
+Evidence binding prevents requirement hallucination — the AI inventing requirements that no stakeholder actually requested. By linking each requirement to its source, reviewers can verify that the spec reflects actual stakeholder intent.

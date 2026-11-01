@@ -1,0 +1,43 @@
+---
+description: Verification defaults to FAIL — prove correctness with evidence
+alwaysApply: true
+---
+
+# Verification Loop
+
+- Verification defaults to **FAIL**. Provide explicit evidence of PASS.
+- Before declaring work complete, run `make verify`
+- Do NOT create PR if any mandatory phase fails
+- **Caps**: 5× same phase, 5 attempts/task, or 3 consecutive failing tasks → STOP, see Structured Repair
+
+## Three-Tier Validation
+
+1. **Micro** — after each edit: linter/typecheck on changed file
+2. **Macro** — at checkpoint: `make verify`, produce verification artifact
+3. **Adversarial** — before PR: mandatory Reflect pass (Step 6.5) in a fresh session. See `adversarial-reflection.mdc`.
+
+## Builder-Validator Separation
+
+Verify (Step 7) runs in a **fresh session** that never saw the implementation. Validator reads spec + holdouts + `make verify` output — not the builder's reasoning. See `builder-validator.mdc`.
+
+## Verification Artifact (per user story)
+
+- All tests pass (GREEN) — happy path, error path, and edge cases
+- No TODO/FIXME in modified files
+- New code is wired — imported and called, not orphaned
+- Demo statement is demonstrable
+- `make verify` passes
+- **Oracle class per criterion**: **(a)** ground-truth (holdout, prior release, sibling, executable property), **(b)** proxy (coverage, mutation, lint), or **(c)** critic. Tier-3/4 on **(c) alone fails** — model opinion ≠ evidence.
+- **Acceptance outside the acting agent** — deterministic check, holdout, property, or named human; never the agent's own account, nor an in-band judge on transcript+diff only.
+- **Generated property = (a) only after it kills mutants.** Unvalidated is vacuous (reports verified on nothing).
+- **Past defects are oracle input.** Escaped bugs → `.specify/defects/` seeds — review input not from the diff.
+
+## Structured Repair
+
+1. **1st failure**: fix the specific error (`Attempts: 1`).
+2. **2nd failure**: flip `Executor:` to the attempt-2 lane of R13 in the session-strategy.md routing table (fresh session), record `Escalated: from=<old> to=<new> attempts=2`, reviewer flips; widen context (`Attempts: 2`). Hard-lane tasks keep their human pair.
+3. **3rd failure**: fix on escalated lane; search adjacent modules (`Attempts: 3`).
+4. **4th failure**: 2nd failure on escalated lane (4 total) — R13's attempt-4 escalation: premium for a default-start task, otherwise `NEEDS_HUMAN` (`Attempts: 4`).
+5. **5th failure** (or any cap above): STOP — present cap card per `decision-elicitation.mdc` (human-paired).
+
+Pick best iteration, not latest. Security findings always escalate immediately.

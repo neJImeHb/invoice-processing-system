@@ -1,0 +1,42 @@
+---
+description: Failure-propagation discipline — never swallow errors or fall back to defaults silently
+alwaysApply: true
+---
+
+# Error Handling — Fail Loudly
+
+Agents are RL-optimized to produce code that runs, so they over-protect
+locally: broad catches, silent fallbacks to defaults. That is the opposite of
+good design — a service silently running with wrong config is worse than a
+service that refuses to start.
+
+## Rules
+
+- **Failures propagate up.** Never catch-and-continue unless the catch site
+  can genuinely handle the error (retry, compensate, surface to the user).
+- **No silent defaults on config/startup paths.** If a config file, env var,
+  or secret fails to load, crash with a clear message — do not fall back to
+  defaults that let the service hobble along.
+- **No bare catch-alls.** Every catch block must do at least one of: rethrow
+  (enriched), route to the structured logger with context, or execute a real
+  recovery path. Empty blocks are linted (`suspicious/noEmptyBlockStatements`,
+  currently `warn` — 66 pre-existing violations; promote to `error` after the
+  cleanup sweep). Never add new ones.
+- **Catch narrowly.** Prefer catching at the boundary that can act (handler,
+  job runner, capability invoker) over wrapping every call site.
+- Fallback behavior that masks a failure (default config, empty list on query
+  error, retry-forever) requires an explicit comment justifying why masking is
+  correct there.
+
+```ts
+// ❌ Bad — service hobbles along with wrong config
+let config: Config;
+try {
+  config = loadConfig(path);
+} catch {
+  config = DEFAULT_CONFIG;
+}
+
+// ✅ Good — refuses to start, failure is visible immediately
+const config = loadConfig(path); // throws with a clear message
+```

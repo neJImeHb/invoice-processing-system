@@ -1,0 +1,43 @@
+{
+  "name": "server",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test:unit": "vitest run",
+    "dev": "tsx src/index.ts",
+    "start:test-server": "tsx src/dev-test-server.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration:pipeline": "vitest run --config vitest.pipeline.config.ts",
+    "test:integration:chat": "vitest run --config vitest.chat.config.ts test/chat.integration.test.ts",
+    "test:integration:agent-actions": "vitest run --config vitest.chat.config.ts test/agent-actions.integration.test.ts",
+    "live:invoice": "tsx src/live-invoice.ts"
+  },
+  "dependencies": {
+    "@google/genai": "2.30.0",
+    "@langchain/google-genai": "^2.3.4",
+    "@langchain/langgraph": "^1.5.2",
+    "@langchain/langgraph-checkpoint-postgres": "^1.1.2",
+    "express": "^5.3.0",
+    "kafkajs": "2.2.4",
+    "langchain": "^1.5.18",
+    "multer": "^2.4.0",
+    "pdf-lib": "1.17.1",
+    "pg": "^8.23.1",
+    "zod": "3.25.76",
+    "zod-to-json-schema": "3.25.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "@types/pg": "^8.23.1",
+    "eslint": "^10.13.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,33 @@
+---
+description: Session start/end protocol — load context, check safety, log learnings
+alwaysApply: true
+---
+
+# Session Protocol
+
+## At Session Start (Before Any Work)
+
+- **Kill switch check**: If `.sdlc/KILLSWITCH` exists → STOP, report, do nothing
+- **Read context**:
+  - `.sdlc/context/project-overview.md` — what this project does
+  - `.sdlc/context/conventions.md` — coding standards to follow
+  - `.sdlc/context/architecture.md` — system shape
+- **Read learnings**: Last 20 entries of `.sdlc/learnings/LEARNINGS.jsonl`
+- **Check trust**: Read `.sdlc/trust-ledger.json` for current autonomy level
+- **Check active work**: Look for in-progress specs in `.sdlc/specs/`
+## During Session
+
+- After significant edits: micro-verify (lint/typecheck on changed files)
+- After completing a logical unit: macro-verify (`make verify`)
+- Before any destructive action: re-check kill switch
+- Log non-obvious decisions in commit messages
+
+## At Session End
+
+- **Propose learnings**: If you discovered patterns, mistakes, or conventions, propose additions to LEARNINGS.jsonl
+- **Update trust**: If session was successful, note it. If failures occurred, they're already logged.
+- **Handoff**: If work is incomplete, leave a clear note about what's done and what remains
+
+## Session Budget
+
+Maximum spend per session: $20. If approaching this limit, wrap up current work cleanly and stop.

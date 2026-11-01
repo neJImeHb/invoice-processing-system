@@ -1,0 +1,44 @@
+---
+description: Spec-driven workflow — enforces artifact chain before implementation
+alwaysApply: true
+---
+
+# Spec-Driven Development
+
+## Workflow
+
+For new features or significant changes, follow the artifact chain:
+
+1. **Specify** → Create `.sdlc/specs/<name>/spec.md` from template
+2. **Clarify** → Interrogate spec for ambiguity, edge cases, missing constraints
+3. **Plan** → Break into implementable chunks with dependencies
+4. **Tasks** → Atomic user stories with acceptance criteria
+5. **Implement** → Code against tasks, one at a time
+6. **Verify** → Run `make verify`, confirm all acceptance criteria pass
+
+## When to Use Full Pipeline
+
+- New features with >2 files touched
+- Architectural changes
+- Changes to auth, data models, or external integrations
+- Anything the developer says "create a spec for"
+
+## When to Skip
+
+- Bug fixes with clear reproduction steps (use bugfix template instead)
+- Single-file changes with obvious intent
+- Documentation-only changes
+- Dependency updates
+
+## Templates
+
+- Feature spec: `.sdlc/templates/spec.md`
+- Plan: `.sdlc/templates/plan.md`
+- Tasks: `.sdlc/templates/tasks.md`
+- Bugfix: `.sdlc/templates/bugfix.md`
+
+## Ambiguity Markers
+
+Mark any uncertainty with `[NEEDS CLARIFICATION: specific question]`.
+Never guess at behavior — ask.
+

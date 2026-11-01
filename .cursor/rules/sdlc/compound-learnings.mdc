@@ -1,0 +1,37 @@
+---
+description: Compound engineering — accumulate project knowledge across sessions
+alwaysApply: true
+---
+
+# Compound Learnings
+
+## Read at Session Start
+
+Before starting work, read the last 20 entries of `.sdlc/learnings/LEARNINGS.jsonl`.
+These contain hard-won lessons from previous sessions. Do not repeat past mistakes.
+
+## Write After Significant Work
+
+After completing a feature, fixing a non-trivial bug, or discovering a pattern:
+
+1. Propose 1-3 learnings to the developer
+2. On approval, append to `.sdlc/learnings/LEARNINGS.jsonl`:
+
+```json
+{"timestamp":"<ISO-8601>","type":"pattern|mistake|convention|gotcha","desc":"<concise lesson>","context":"<file or area>"}
+```
+
+## Types
+
+- **pattern**: A reusable approach that worked well
+- **mistake**: Something that failed — prevent repetition
+- **convention**: A project-specific standard discovered or established
+- **gotcha**: A non-obvious behavior or edge case
+
+## Rules
+
+- Keep entries concise (one line each, <200 chars for desc)
+- Never duplicate an existing entry
+- Remove obsolete entries during updates (with developer approval)
+- Entries are project knowledge — never include secrets, credentials, or PII
+

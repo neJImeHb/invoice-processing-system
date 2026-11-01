@@ -1,0 +1,55 @@
+---
+description: Conservative defaults for background and headless agents
+alwaysApply: true
+---
+
+# Automation Behavior
+
+These rules apply to all AI agents operating in background, headless, or
+non-interactive contexts (CI self-healing, bug bot, scheduled tasks).
+
+## Before Any Commit
+
+- Run `make verify` and confirm it passes
+- If `make verify` fails after 5 attempts, STOP and report the failure (consistent with `verification-loop.mdc` per-task cap)
+
+## Scope Limits
+
+- Only modify files directly related to the assigned task
+- Never perform opportunistic refactors or "while I'm here" improvements
+- Never modify governance files: .cursor/rules/sdlc/, .copier-answers.sdlc.yml
+
+## Safety
+
+- Never use `--no-verify` on any git command
+- Never force-push to any branch
+- Never push to `main` or `master`
+- Include `[agent]` marker in commit messages for audit traceability
+
+## Uncertainty Protocol
+
+- If uncertain about the correct approach, output `NEEDS_HUMAN` status
+- If a fix could have unintended side effects, output `NEEDS_HUMAN` status
+- Prefer doing nothing over doing something wrong
+- When in doubt, post a comment explaining findings and stop
+
+## Parallel-Agent Isolation
+
+- Parallel agents NEVER share a working tree: every concurrent agent runs in
+  its own git worktree/branch (the `best-of-n-runner` pattern). Two agents on
+  one checkout is forbidden.
+- An agent may not edit files claimed by another in-flight task — the file
+  lists in `tasks.md` are the claim registry; when the feature's plan
+  declares a "Files (claim registry)" section, that section is the canonical
+  source. If your task needs a claimed file, stop and report instead of
+  editing.
+- Conflicting changes are resolved at PR merge, where git is the arbiter —
+  never by overwriting another agent's uncommitted or committed work.
+- Before editing a file with uncommitted changes you did not make this
+  session, stop: another agent or the human may be mid-change.
+
+## Anti-Loop
+
+- If the latest commit on the current branch contains `[agent]` in its message, STOP immediately
+- This marker cap and any host auto-fix cap (e.g. Cursor cloud agents' 10-follow-ups-per-PR cap) are complementary — neither may be used to bypass the other
+- Do not retry a fix that another agent already attempted

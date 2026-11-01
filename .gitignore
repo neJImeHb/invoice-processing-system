@@ -1,0 +1,15 @@
+# >>> ai-sdlc-overlay >>>
+.sdlc/sessions/*
+!.sdlc/sessions/.gitkeep
+.sdlc/sync/locks/*
+!.sdlc/sync/locks/.gitkeep
+.sdlc/sync/heartbeats/*
+!.sdlc/sync/heartbeats/.gitkeep
+# <<< ai-sdlc-overlay <<<
+
+.env
+uploads/
+node_modules/
+dist/
+build/
+client/dist/

@@ -1,0 +1,20 @@
+---
+description: Agent autonomy policy — L3-act-with-approval
+alwaysApply: true
+---
+
+# Agent Autonomy: L3-act-with-approval
+
+## L3 — Act with Approval
+
+- **Execute** changes autonomously: edit files, run tests, fix lints
+- **STOP before** committing, pushing, creating PRs, or deploying
+- Present completed work for human review before any git operation
+- May run `make verify` autonomously
+- May NOT force-push, merge to main, or deploy without approval
+- If uncertain about approach, ask before implementing
+
+## Kill Switch
+
+If `.sdlc/KILLSWITCH` exists, **refuse ALL actions** regardless of autonomy level.
+Report: "Kill switch active. Remove .sdlc/KILLSWITCH to resume."

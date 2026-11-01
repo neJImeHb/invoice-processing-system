@@ -1,0 +1,43 @@
+---
+description: Coding style, file-size policy, and structural constraints (TypeScript)
+globs: "**/*.ts,**/*.tsx"
+alwaysApply: false
+---
+
+# Coding Style
+
+## File size
+
+Applies to `.ts`/`.tsx` source only — not `.md` docs.
+
+- Target new files: `<= 200` lines.
+- Warning band: at 150+ lines, plan an extraction before adding more.
+- Hard stop: do NOT create new files `> 500` lines. Absolute — no PR-note override.
+- Landing rule: if a new file crosses 200 lines while you build it, stop and split before continuing.
+- Legacy files over 200 lines: split only when the current task already touches that file — no opportunistic refactors.
+- Reading more than 500 lines in a session: see `agent-efficiency.mdc` for targeted-read guidance.
+- Error-path code earns no size exemption — keep handlers small; failure-propagation rules live in `error-handling.mdc`.
+
+## Structure
+
+- Function length: 50 lines max.
+- Nesting depth: 4 levels max (early return to flatten).
+- Prefer immutability: create new objects, do not mutate params.
+- Use `unknown` over `any`; narrow with type guards.
+- `interface` for object shapes; `type` for unions/intersections.
+- Use `as const` for literal objects and enums.
+
+## Cross-cutting rules
+
+Pointers only — do not duplicate the rule bodies here:
+
+- Error handling and failure propagation: `error-handling.mdc`
+- Pre-change planning gate: `planning.mdc`
+- Token and read discipline: `agent-efficiency.mdc`
+
+## Search Before Create
+
+- Search this repository before adding a new function.
+- If a similar function exists, reuse or extend it.
+- Never re-implement logic that already exists — agents duplicate ~1.7x more than humans.
+- If you find duplicate implementations, refactor to a single source of truth.

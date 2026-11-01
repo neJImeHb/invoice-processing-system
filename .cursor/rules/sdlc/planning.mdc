@@ -1,0 +1,52 @@
+---
+description: Plan-then-confirm gate, checkpoint sizing, anti-drift
+alwaysApply: true
+---
+
+# Planning
+
+## Planning gate
+
+For changes outside the full SDLC spec pipeline:
+
+1. Restate the requirement in own words
+2. List affected files and modules
+3. Identify risks: RLS changes? Migration? Event schema? Security?
+3b. Answer the Why/What-if stanza (3 lines, before any non-trivial edit):
+   - **Why:** does this change trace to a spec, task, or explicit user request?
+   - **What if it's wrong:** blast radius — what breaks, who notices, how is it rolled back?
+   - **What if we do nothing:** is the change even needed, or is it invented scope?
+3c. Any stop for a human decision is a card: `decision-elicitation.mdc`
+4. For changes touching 3+ files or any architectural pattern: output a plan and **STOP** for confirmation
+5. For changes touching 1-2 files with no architectural impact: proceed after completing steps 1-3c
+
+## Code tasks
+
+- For `.ts`/`.tsx` work, read `.cursor/rules/sdlc/coding-style.mdc` before writing code — file-size limits and structure rules; error handling via pointer to `error-handling.mdc`.
+
+## Execution sizing
+
+Do not optimize for number of tasks. Optimize for independently verifiable
+execution boundaries (checkpoints).
+
+A **checkpoint** is a meaningful state transition that can be independently
+verified (e.g. contract change → targeted test; template change → spawn/leak
+check). Prefer: inspect → change → verify → next risk surface.
+
+- Assess complexity **implicitly** (blast radius, uncertainty, verification
+  needs, handoff). Surface the assessment only when it changes how you
+  decompose — no ritual complexity form every turn.
+- Use checkpoints proportional to complexity; do not target a fixed todo
+  count. Prefer the fewest checkpoints that preserve independent verification;
+  split further when a checkpoint becomes too broad to verify safely.
+- Trivial work may proceed without TodoWrite.
+- Large work escalates to SDLC partition / story boundaries — do not expand
+  one in-session todo list. Cursor todos are **not** the claim registry.
+- High uncertainty → more verification boundaries; low uncertainty + low
+  blast radius → less ceremony.
+
+## Anti-Drift
+
+- **Architectural drift** (wrong module, wrong pattern, wrong API shape): **REVERT** changes and replan — do not fix forward
+- **Localized fix** (test failure, lint error, off-by-one): fix in place with structured iteration — revert is overkill
+- Rule of thumb: if the fix touches files outside the current task scope, or reformats unrelated existing lines inside an in-scope file, it is drift — revert. Unsure which? That is a card (`decision-elicitation.mdc`).

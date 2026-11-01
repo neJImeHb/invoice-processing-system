@@ -1,0 +1,20 @@
+{
+  "version": "1.0.0",
+  "project": "Invoice Processing System",
+  "autonomy_level": "L3-act-with-approval",
+  "safety_invariants": {
+    "s1_advisory_output": false,
+    "s2_multi_tenant": false,
+    "s3_external_side_effects": false,
+    "s4_cost_ceiling_usd": 20,
+    "s5_checkpoint_discipline": true,
+    "s6_ownership_boundaries": true
+  },
+  "verification_command": "make verify",
+  "sessions": [],
+  "trust_score": {
+    "current": 100,
+    "history": []
+  },
+  "notes": "Trust score starts at 100. Decremented on: verification failures (-10), safety violations (-25), governance overrides (-50). Incremented on: successful PRs merged (+5), clean sessions (+2). Score below 50 forces autonomy drop to L2."
+}

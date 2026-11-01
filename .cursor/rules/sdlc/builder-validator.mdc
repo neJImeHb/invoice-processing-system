@@ -1,0 +1,70 @@
+---
+description: Structural separation of builder and validator agents
+alwaysApply: true
+---
+
+# Builder-Validator Separation
+
+The implementing agent (builder) and the verifying agent (validator) must have **structural independence** — they do not share conversation context.
+
+## What "separate" means here
+
+Separation is at the level of **session and model family**, not person or
+organisation:
+
+- **Session** — the validator starts fresh and has never seen the builder's
+  conversation, reasoning or intermediate decisions. Same human, same machine, new
+  session is fully compliant.
+- **Model family** — the grader must not be the same family as the executor that
+  produced the artifact (see the model-routing table in your repo's `AGENTS.md`).
+  One cross-family judge is the minimum viable independence, and a jury must never
+  be majority same-family as the executor.
+- **Authoring a holdout is not grading it.** A holdout test is an artifact, so its
+  author runs on the executor model, in a session that has never seen
+  the implementation conversation. The cross-family clause above
+  binds the grader; a reader who applies it to holdout authoring moves a writing
+  phase onto the reviewer model, which the routing table forbids. Session separation
+  is what buys independence here, and model family is what buys it for the grader.
+- **Acceptance candidates: draft-return-save.** Per-scenario acceptance *content*
+  (the RED candidate for each `AS-xxx`) is drafted by the read-only
+  `acceptance-author.md` subagent from `spec.md` + `plan.md` alone — it never reads
+  `packages/**`, `apps/**` or a diff, and has no Write tool. It returns the draft to
+  the parent session, which saves it under
+  `.specify/specs/<NNN-feature>/candidates/<as-id>.test.ts` with the header
+  `// oracle: candidate`. The implementer does not author acceptance candidates for
+  its own spec (template spec 178-reviewer-pool-reallocation AS-002); unit tests stay
+  on the default lane as before.
+- **Promotion is the validator's move.** The Step 7 validator session (fresh, below)
+  is the one that runs `make mutation CANDIDATES=.specify/specs/<NNN-feature>/candidates`
+  on a clean committed tree and writes the commit-bound `mutation-receipt.json`. A
+  candidate becomes a scenario's `Verify:` test only after an `audit.jsonl` line
+  `--candidate <path> --kills N --receipt <path>` or `--accepted-by <name>`; a candidate
+  that killed nothing and was accepted by nobody is a card to the named human
+  (`--accepted-by` after reading, or `--waived-by <name> --reason <text>` with the file
+  deleted — nobody writes a test in its place).
+- **NOT organisation, and NOT a second person.** A one-person team satisfies this
+  rule completely; requiring a second human would make the rule unenforceable for
+  an agency-of-one and would invite it to be skipped rather than followed. Nothing
+  here creates a staffing requirement.
+
+The consequence worth stating: single-threaded spec ownership (ADR-037) and this
+rule do not conflict. One person owns the spec end to end **and** runs the
+validator in a fresh session with a cross-family grader.
+
+## Rules
+
+1. **Verify (Step 7) runs in a fresh session.** The validator has never seen the implementation conversation, reasoning, or intermediate decisions.
+2. **The validator reads:** spec.md (WITH holdouts), addenda (if referenced), `make verify` output, Reflect findings (from Step 6.5), spec frontmatter (mutation_targets for mutation audit).
+3. **The validator does NOT read:** progress.md, handoff.md, implementer conversation, or implementation session notes.
+4. **Parallel focused checks** where practical:
+ - Deterministic: `make verify` (the existing 8+ phases)
+ - Boundary: holdout criteria verification (run `Verify:` commands independently)
+ - Mutation: semantic mutation audit (if Tier 3-4, see EVALS.md Layer 2.5); on Tier 2-4 specs with a `candidates/` directory, the validator session runs candidate promotion here (`make mutation CANDIDATES=…` → receipt → promotion, acceptance or waiver line)
+ - Spec drift: check implementation against spec scenarios
+ - Test adversary: the builder wrote both code and tests — spot-check that key tests would actually fail on regression (no tautological or mock-everything tests; see the test-adversary sub-pass in `adversarial-reflection.mdc`)
+5. **For Tier 1 (trivial):** full parallel verify is overkill. Tier 1 gets inline `make verify` only, no separate session.
+6. **For Tier 2-4:** the validator runs in a separate session as described above.
+
+## Why
+
+The builder has self-evaluation leniency bias — it tends to confirm its own output is correct. A structurally independent validator catches issues the builder cannot see. This is the same principle as code review by someone who didn't write the code.

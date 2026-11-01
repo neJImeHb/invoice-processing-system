@@ -1,0 +1,256 @@
+---
+description: Mandatory adversarial reflection pass before verification
+alwaysApply: true
+---
+
+# Adversarial Reflection Pass
+
+Step 6.5 in the universal pipeline — runs between Implement and Verify.
+
+## When this runs
+
+- **Tier 1:** Skip entirely (deterministic `make verify` is sufficient)
+- **Tier 2:** Single abbreviated pass (one reflector session; fix + proceed without re-reflecting)
+- **Tier 3-4:** Full adversarial reflection — **five parallel lenses** (see below). Rounds follow the convergence rule; **5 rounds** is a separate hard ceiling (same numeral as the lens catalog, different policy).
+
+## Reflector session rules
+
+1. **Fresh session required.** The reflector must NOT share context with the implementer. Start a new chat/session with zero implementation history.
+2. **Reflector reads:** `spec.md` (no holdouts), `git diff <base-branch>...HEAD` (the branch this feature branched from), `.sdlc/learnings/LEARNINGS.jsonl`
+3. **Reflector does NOT read:** `progress.md`, `handoff.md`, implementer conversation, holdout criteria
+
+## Lenses — Tier 3-4 run five
+
+One reviewing pass is an incomplete review, and the gap does not close by asking
+the same reviewer again. Measured on a live corpus of 154 human-confirmed
+defects reviewed by eight model versions across five providers: no single
+reviewer exceeded ~64% recall, a typical one caught about half, **56.5% of
+defects were found by exactly one reviewer**, and the largest marginal gain came
+from adding one *independent* second reviewer (33.6% → 57.1% coverage), with
+diminishing returns after. A separate four-agent study measured inter-agent
+correlation at ρ = 0.05–0.25 and attributed the gain to agents hunting
+**different defect classes** — not to repetition.
+
+That curve selected the **axis** — distinct mandates, not extra rounds — not
+the catalog size. Running every named mandate is a cost-axis decision: the
+reviewer pool is cheap, so default and cap are both five rather than a subset
+judged against the last few recall points. It is not a claim that the fourth
+and fifth lenses buy the same step the second one did.
+
+So Tier 3 and Tier 4 Reflect each launch **these five named lenses**, one
+session each, in parallel. A new row in the table below is a rule amendment,
+not an extra default session. A lens is a single named hunting mandate: the
+reflector is told what to hunt and what to leave to the other lenses.
+
+| Lens | Hunts | Leaves to the other lenses |
+|---|---|---|
+| `invariant` | tenant/row scoping and its transaction locality, bypassed service boundaries, authz, audit-event emission, money and state-transition math | style, tests |
+| `failure-path` | swallowed errors, silent defaults, unhandled rejections, partial-failure and rollback paths, config/startup hobbling | happy-path logic |
+| `test-adversary` | tautological and mock-everything tests, assertions that survive an inverted implementation, missing negative cases, test-only production branches | production logic |
+| `contract` | scenario coverage, invented scope, module-boundary and import violations, declared idempotency and feature-flag claims, API/event shape drift, **trace links that resolve but do not hold** — a requirement whose linked scenario tests something else, a scenario or task tracing to no requirement, a link inherited from a renamed or moved artifact | runtime behaviour, style |
+| `variant` | one hypothesis per seed from the defect corpus, `.specify/defects/` (new) — does this diff reproduce a defect class this codebase has already produced, somewhere the seed has not yet been checked? | defect classes with no precedent in the corpus |
+
+- **The five mandates are the floor of every Tier 3-4 round.** Catalog lenses selected for the diff
+  (`surfaces.reflect`: Tier 3 path-mandatory + core, Tier 4 all 24) join the **same round**,
+  where the ceiling is the wave budget. Step 1 and Pre-mortem run the floor plus artifact lenses
+  named in `SKILL.md` / `plan-premortem.mdc` (three-lens carve-out on the review lane, with one
+  refuter pass and the one-round rule). The only automatic drop is `variant` when its seed list is unavailable
+  (the two bullets below) — that exit is the record it did not run, and it does
+  not license dropping any of the other four, nor inventing a replacement to
+  restore the count. Any other drop needs a **named human** in the round's
+  record, not an agent convenience: skipping `invariant` because "the diff
+  looks like tests" is the same incentive that left production logic unhunted
+  when the default was a chosen subset. Each lens is a full read of the diff;
+  the cost lands on the reviewer pool. The count is still the weaker half of
+  this rule and the bullet below is the stronger one.
+- **A dropped lens's unique hunt must be named as deferred.** The table's
+  "leaves to the other lenses" column is a partition, not a deferral. A
+  deferral is a mandate that did not run. Naming it makes the gap a decision
+  a reviewer can weigh rather than an omission nobody sees.
+- **A trace-link finding resolves as `escalated`, not `promoted`.** "This link is
+  semantically wrong" is not mechanically checkable, so a named human decides
+  (070 REQ-046). The finding passes the grounding gate first: a trace-link claim
+  citing a line it cannot quote is discarded, not forwarded with a caveat
+  (070 REQ-045). Signal ratio is measurable from day one, so a mandate whose
+  findings are always discarded is retired rather than tolerated.
+- **Always launch `variant` once it can run.** Do not skip it because the corpus
+  "probably" has no seeds — run `defect-ledger.ts` and let the fail-closed exit
+  speak. It is the only lens whose input is not derived from the diff, which is exactly
+  why it correlates least with the others: the remaining four read what the
+  executor read, so they inherit its blind spots. Seeding a hunt with historical
+  root causes is the mechanism behind the largest published result in this area —
+  Chrome fixed 1,072 security bugs across two milestones, more than the previous
+  23 combined, by asking agents where known past causes recur; the research
+  version (AFuzz) found 40 bugs in V8 from issue-tracker seeds, and then 19 more
+  in two *different* engines using the same seeds. Seed corpora transfer; prompts
+  do not.
+- **The `variant` lens fails closed.** Its mandatory input is
+  `bun run scripts/defect-ledger.ts seeds --area <claimed files>`. Zero seeds means
+  the lens exits non-zero and writes no findings file — it never degrades into a
+  general-purpose reviewer, because an unseeded variant lens is just a fifth reader
+  of the same diff. Each finding carries the `seed_id` it came from, so a seed that
+  never promotes anything can be pruned.
+- **Until spec 082 ships the ledger, `variant` is unavailable, not dropped.**
+  `scripts/defect-ledger.ts` (new) and `.specify/defects/` (new) do not exist in
+  this tree yet, so the seed command fails on a missing file, not on zero seeds.
+  Record `variant: unavailable (no ledger)` in the round's audit line and run the
+  other four; that is a tooling state, not a judgement call, so it needs no human
+  sign-off — and it is the one case where a Tier 3-4 round of four is correct.
+  Do not treat the gap as room for a sixth mandate.
+- Tier 2 keeps its single abbreviated pass; Tier 1 still skips.
+- Every finding carries its `lens`, so a lens whose findings are always
+  discarded can be identified and retired.
+- **`independentLenses` governs inline visibility only.** Each merged finding records the count of distinct lens mandates that reported it, but `independentLenses` governs inline visibility only — it never promotes, protects, or removes findings.
+- **Five lenses on the same model family buy lens diversity, not family
+  diversity.** Their errors correlate — which is why agreement still never
+  promotes and refute-or-promote below is unchanged. Where the host meters the
+  reviewer separately from the executor, extra lenses are the cheap axis to
+  spend on.
+- **A lens never edits.** Its output is findings; the implementer applies fixes.
+  Read-only is a capability boundary, not a politeness — a critic that can edit
+  will fix what it flags and leave no evidence the finding was ever wrong.
+- **Because they never edit, parallel lenses share one checkout.** The
+  no-shared-working-tree rule for parallel agents governs *writers*; five
+  read-only sessions on one tree cannot conflict. Their only write is the audit
+  line below, appended to one file in one checkout. A lens that does run in its
+  own worktree must shard that file the way lane events do, or the append is lost
+  at merge.
+- **Extra rounds are not extra lenses.** Re-running one mandate over an
+  unchanged diff is the weakest option available: the corpus study could not
+  establish that repeated passes differ. Round 2 earns its cost for a different
+  reason — round 1's fixes are themselves unreviewed code. In the two-round pilot
+  behind this rule, round 2 promoted 7 findings, two of which were wrong fixes
+  from round 1.
+
+## Adversarial prompt
+
+Use this framing for the reflector, narrowed to its lens — the checklist below is
+the union of all lenses, and a lens reads only its own rows:
+
+> You are a hostile code reviewer. Your job is to find every bug, inconsistency, and spec violation in this diff. You are not the author — you are the critic. Assume the code is wrong until proven correct.
+
+Checklist:
+- Spec compliance: does every acceptance scenario (AS-xxx) have correct implementation?
+- Challenge the Why: does every part of this diff trace to a spec requirement or task, or is it invented scope?
+- Error handling: are all error paths handled? Missing try/catch, unchecked nulls, unhandled promise rejections?
+- Swallowed failures: silent fallback to defaults instead of propagated failure? Broad catch-and-continue? Config/startup paths that hobble along instead of crashing? (see `error-handling.mdc`)
+- Security: hardcoded secrets, missing input validation, SQL injection, XSS, missing auth checks?
+- Edge cases: empty states, max limits, concurrent access, unicode, zero-length inputs?
+- Dead code: unused imports, unreachable branches, orphaned functions?
+- Architectural drift: wrong module, wrong pattern, imports from `_internal/`?
+- Test coverage gaps: scenarios without tests, happy-path-only tests, missing boundary assertions?
+- Hardcoded values: magic numbers, environment-specific strings, non-configurable timeouts?
+
+### Test-adversary sub-pass (attack the tests themselves)
+
+The implementer wrote both the code AND the tests — assume the tests are
+complicit until proven otherwise:
+- Tautological tests: assertions that can't fail (asserting a mock returns what the mock was told to return)?
+- Mock-everything tests: is the unit under test actually exercised, or is everything stubbed?
+- Break-the-behavior check: for each key assertion, would it fail if the implementation regressed? (mentally invert the production logic)
+- Missing negative cases: error paths, authz denials, and boundary violations asserted — not just happy paths?
+- Test-only escapes: production code branches that exist solely to make tests pass (`if (process.env.NODE_ENV === 'test')`)?
+
+## Findings format
+
+Output structured JSON, one finding per line:
+
+```json
+{"severity": "Critical", "routing": "human-judgment", "file": "src/modules/auth/service.ts", "line": 42, "quote": "const rows = await tx.select().from(tasks)", "finding": "RLS context not set before query", "fix": "Add setWorkspaceContext(tx) before the SELECT", "round": 1, "lens": "invariant"}
+```
+
+`seed_id` is required when `lens` is `variant` and omitted otherwise — it is what
+lets the corpus report which seeds earn their keep.
+
+`routing` field:
+- **agent-fixable:** style violations, mechanical bugs, clear engineering-rule breaks — the implementer fixes these without human input
+- **human-judgment:** DB migrations, new dependencies, auth/permission changes, backwards-incompatible API changes, irreversible/destructive operations — surface to the human as a decision card per `.cursor/rules/decision-elicitation.mdc` (fix as proposed / fix differently / accept and record / defer to a follow-up, with consequences and a recommendation); never auto-fix
+
+Severity levels:
+- **Critical:** Security holes, data corruption, RLS bypass, spec violations
+- **High:** Logic bugs, missing error handling, broken edge cases
+- **Medium:** Code quality, performance, missing tests for non-critical paths
+- **Low:** Style, naming, minor improvements
+
+## Iteration model
+
+1. Reflector produces findings report
+2. Implementer clusters findings by shared root cause and shared file set, then applies **one cluster per commit**, re-running the deterministic gate after each. On regression, revert **that cluster** — not the whole round. Independent findings may be batched inside a cluster; interdependent findings must share one.
+3. NEW reflector session re-scans ALL code (fresh `git diff`)
+4. Repeat until zero Critical/High findings remain, or cap reached
+
+**Stale-loop detection:** If Round N findings overlap >80% with Round N-1 (by description similarity and count), stop — the reflector and implementer are oscillating — and present the cap-escalation card per `.cursor/rules/decision-elicitation.mdc`: revise the plan / widen the search / revert the cluster / accept the residual, each with its consequence, recommendation first, cost of doing nothing stated.
+
+**Rounds — a convergence condition, not a count.** Reflect again while the
+previous round **changed code**; stop at the first round that promotes nothing.
+
+The reason is not that N rounds find N times the defects — the corpus evidence
+could not establish that repeating one mandate over an unchanged diff helps at
+all. A further round earns its cost for a different reason: the previous round's
+fixes are themselves unreviewed code, and they are written under the bias of
+having just been told what was wrong. When a round produces no fixes there is
+nothing new to review, and the next round can only restate. In practice this is
+2 rounds on a small diff and 3-4 where the fixes were substantive.
+
+**5 stays the hard ceiling** — it is the per-task attempt cap in
+`verification-loop.mdc`, so the two numbers are one policy and neither moves
+alone. Reaching it with Critical/High still open is an escalation, not a licence
+for a sixth round: at that point the plan is what is wrong.
+
+## Audit (this is what makes calibration possible)
+
+Each lens appends ONE line per round to the feature's `audit.jsonl` — without it
+there is no record that the pass happened, and every downstream claim about
+reviewer quality rests on recollection. Append it with the project's
+audit-append tool where one exists: a writer that validates against the same rules
+the reader enforces cannot produce a stream that later reads as corrupt, and the
+field names stop being re-invented per session. This overlay ships no such tool —
+where the project has none, write the line by hand to exactly the shape below.
+The field names are the contract: a pass recorded in another shape is a pass no
+reader will count, which is the same outcome as not recording it. One line per
+pass per round, written **after** refutation — the grounding gate runs first and
+supplies `discarded`, but it is not the thing that records the pass:
+
+```json
+{"timestamp":"<ISO-8601>","phase":"reflect","actor":"agent","outcome":"<clean|fixed|escalated>","spec":"<NNN-feature>","model_role":"critic","lens":"<lens>","round":1,"findings":13,"verified":1,"discarded":8,"task":"T3.2","model_family":"<reviewer_family>","artifact_hash":"<sha256>"}
+```
+
+For jury independence verification (template spec 160-gemini-flash-executor-grok-max AS-003 and template spec 178-reviewer-pool-reallocation AS-001), critic and grader entries include `task`, `model_family`, and `artifact_hash` (e.g. `"task":"T3.2","model_family":"<reviewer_family>"` on an `Executor: default` task, matching `lanes[strong].family` from `executor-routing.json`). `spec-lint --mode=verify` asserts that `model_family` ≠ `lanes[current Executor].family` for the matched task (checking against the current lane after any escalation). Gate reviews (spec and plan) and reflection checks require `artifact_hash` to assert one round per artifact version and lens. Lines without `task` must resolve uniquely via `file` to a single task's `Files (claim)` list.
+
+The counts are a partition, and the order matters — record them so they cannot be
+read two ways: `findings` is **every** candidate the lens produced before any
+filtering; `discarded` is the subset the grounding gate rejected; `verified` is
+the subset of what remained that survived refutation. So
+`verified + discarded ≤ findings` always.
+
+Two ratios come out of those three numbers, and they are not interchangeable:
+
+- **Signal ratio** (precision) = `verified / findings` — of everything the lens
+  emitted, what turned out to be a real, reproducible defect. This is the lens's
+  own quality, and the name to search for: it is the term the precision-budget
+  requirement uses, and a lens that sits persistently low gets rewritten or
+  retired rather than tolerated. For scale, 12 of 13 surveyed review agents
+  measured below 0.60.
+- **Kill rate** = `(findings − discarded − verified) / (findings − discarded)` —
+  computed over **grounded candidates only**, because refutation is never
+  attempted on a discarded one. Counting a discard as a kill inflates the rate
+  for precisely the lens whose output is least trustworthy, which would mask the
+  low kill rate that is the under-refuting signal this metric exists to catch.
+
+## Model routing
+
+The Reflect step runs on a **cross-family reviewer** — a different model family from the executor that wrote the code, in a fresh session. Judge-independence rationale: same-family reviewers share correlated blind spots with the author; one cross-family judge is the minimum viable independence (a review ensemble must never be majority same-family as the author). If no second model family is available in your environment, fall back to the default executor + fresh session + adversarial framing — weaker but still meaningful independence.
+
+**Grounding gate (runs before any finding is read).** Every finding MUST cite `file`, `line` and `quote` — the source text as it appears at that location. Verify all three **mechanically**: a script reads the findings file and checks each citation against the working tree — the file exists, the cited line exists, the quoted text is on it. Asking an agent to confirm the citations is an opinion about an opinion; the discard count has to come out of a check, and the cited line is exact (a ±1 window passes a reviewer that cannot locate its own evidence). **Findings that fail are discarded, not forwarded with a caveat** — an unverifiable finding costs a reader the same attention as a real one. Report the discard count; a lens whose findings are frequently ungrounded is a lens to retire.
+
+**Refute-or-promote.** A finding is a hypothesis until a check written to disprove it fails. Each finding resolves to exactly one of: **promoted** — a test, property, type error or lint rule now fails on current code, so the defect is reproducible and the fix is verifiable; **killed** — the attempted check passes, so the finding was wrong; **escalated** — not mechanically checkable, so a named human decides. Every reviewing pass carries an adversarial mandate: try to disprove the candidate, not to confirm it.
+
+**A promoted finding becomes a seed.** The same invocation that records the pass
+appends the promoted root cause to `.specify/defects/` (new) — never a separate manual
+step, because a recording step that is optional is a recording step that does not
+happen (the calibration reader had no input for its first ten features for exactly
+this reason). A seed is the abstracted cause, not the bug report: the invariant that
+broke, the mechanism, the entry point that reached it, and at least one other place
+the same class was checked. A seed with no counter-check is a note, not a seed.
+
+**Agreement between critics MUST NOT promote a finding, and consensus is not admissible evidence.** Unanimity among critics measures shared priors, not truth. Expect roughly one candidate in five to survive refutation, and record the kill rate per configuration: a suspiciously low kill rate means under-refuting, not quality.

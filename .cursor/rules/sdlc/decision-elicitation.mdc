@@ -1,0 +1,141 @@
+---
+description: Decision elicitation — how the agent stops for a human decision (gates, cap escalations, clarifications, continuation prompts, revert-vs-fix, review bypass). Read when about to ask the developer to approve, choose, confirm, or resolve anything; defines the option card, the ask-or-commit test, and how developer and product preferences layer on
+alwaysApply: true
+---
+
+# Decision Elicitation
+
+An agent that stops for a human decision hands over a **decision card**, never a
+bare yes/no question. The card exists so the developer decides with the
+consequences in view, and so the same stop looks the same in every phase.
+
+## The card — four required fields
+
+1. **Options** — enumerated and closed-ended by default; free text is the
+   fallback, offered as one more option, never the only one. At least two
+   distinct options. If the agent cannot name two, it says so plainly and stops
+   instead of manufacturing a filler option.
+2. **Consequences** — one per option, at the same length and depth as the
+   recommended option's. Writing the alternatives thin narrows the choice
+   before the developer has made it.
+3. **Recommendation** — one option is named as the recommended default and is
+   listed first (a developer may move it after the options — see Layering). It
+   reads as a recommendation with its reason, never as a decision already
+   taken, and it states in one clause the condition that would **overturn** it,
+   so the developer is given something to disagree with rather than a verdict
+   to ratify.
+4. **Cost of doing nothing** — the "What if we do nothing" line from step 3b of
+   `.cursor/rules/sdlc/planning.mdc`, answered for this decision: what stays broken,
+   who notices, what it costs later. Same words, not a parallel vocabulary.
+
+Every card also carries the **context payload**: **actor** (who decides),
+**action** (what the decision authorizes), **resource** (the file, branch, PR or
+system it touches), **risk tier** (the feature's tier, 1-4), and the
+**artifact under decision** (the spec, plan, task list, diff or report the
+options act on).
+
+### Verbs
+
+The canonical verbs are **approve / reject / revise**. Some stops extend them:
+
+- **Approval stops** (a spec, a plan or a change the project's own workflow
+  puts in front of a human): approve / reject / revise. A ship decision
+  offers *ship* / *hold for a named fix* / *ship with a recorded follow-up*.
+- **Cap escalations** (5th failure, stale loop, cross-task cap): revise the
+  plan / widen the search / revert the cluster / accept the residual — with the
+  consequence of each, recommendation first, cost of doing nothing stated.
+- **Revert-vs-fix:** the drift classification is itself a card — *revert and
+  replan* against *fix in place*, with the rule of thumb as the consequence.
+- **Review bypass:** *bypass* / *fix the queue* / *hold*, carrying the audit
+  line the bypass will write.
+
+### Review-finding decisions
+
+Ordinary findings (ask-or-commit subjects that are not escalation-class) offer
+*fix now* / *not a bug — dismiss* / *defer* / *hold* / *decide later*
+(CLI: `fix-now` | `not-a-bug` | `defer` | `hold` | `follow-up-spec`).
+Escalation findings omit *fix now* and offer *open a follow-up spec* /
+*defer to the PR* / *I fix it myself* / *decide on the PR later*. A terminal
+`exitReason` also omits `fix-now`. Cards carry the quoted evidence line;
+record via `.cursor/rules/decision-elicitation.mdc` ask-or-commit + `--decide`.
+
+- **`step-budget-hard-limit-reached`:** bans destructive git resets (`git
+  reset`, `git stash drop`, `git checkout .`); saves in-flight state to
+  reports/pr-review/local/loop-handoff.md; asks whether to extend the step
+  budget or conclude the loop.
+- **`role-gate-denies-off-policy-parent`:** launches a fresh session on the
+  required executor model family (AGENTS.md model routing) — never continue
+  the off-policy parent.
+
+Where an existing surface already has its own vocabulary (the PO/Architect
+Decision Brief's YES / NO / CHANGE TO), it maps onto approve / reject / revise
+rather than adding a fourth verb set.
+
+## Ask or commit — an observable test, not a feeling
+
+Before asking anything, probe read-only: the artifact, the codebase and the
+spec answer most candidate questions, and a question they already answer must
+not be asked. For what remains, two questions with checkable answers:
+
+1. Is the subject on the **never-guess list** in
+   `.cursor/rules/sdlc/anti-hallucination.mdc` (auth, retention, scaling, business
+   rules, integrations, pricing, PII)?
+2. Would the answer **change a named artifact** — the spec, the plan, the task
+   list, the diff, or which option is taken at a registered decision point?
+
+A yes to either → ask. Two noes → commit, and **state the assumption** in the
+artifact where the next reader will hit it (a Clarifications row, a plan
+decision, a code comment at the site). Risk tier changes what counts as a named
+artifact — at Tier 3-4 a test's shape or a migration step is one — never a
+round count. Nothing here asks the agent to report, score or threshold its own
+certainty; the test is the two questions above, and only those.
+
+Clarification cards carry options, consequences and a recommendation; the
+do-nothing line is replaced by the assumption the agent would otherwise write
+down. Every other class carries all four fields.
+
+## Harness binding
+
+- **Cursor:** present the card through `AskQuestion` — recommended option
+  first, one card per decision, several independent decisions batched into one
+  form when they are independent.
+- **Any other harness:** the same options as a numbered markdown list,
+  recommendation first, consequences inline.
+- **Background, headless or CI agents never ask.** They emit `NEEDS_HUMAN` with
+  the card's content as the message and stop
+  (`.cursor/rules/sdlc/automation-behavior.mdc`).
+
+## Record
+
+A decision taken at a gate, a cap escalation or a review bypass leaves a
+`type: "decision"` line in the feature's `audit.jsonl` — options offered,
+which was recommended, which was chosen, a reason code, the risk tier, and the
+named approver — through the project's audit-append tool where one exists;
+this overlay ships none, so where the project has none, write the line by
+hand in exactly that field shape. The stream's `actor` stays `human | agent`; the person's name is
+`human_approver`. The card itself is not the record: a card shown and a decision
+unrecorded is a decision nobody can audit.
+
+## Layering — preferences down, guarantees up
+
+- **Template guarantees win.** The four fields, the verb triad, the ask-or-commit
+  test and the headless exemption cannot be removed, reduced or disabled by any
+  lower layer. Layers are additive only; no layer replaces the one below it.
+- **Developer.** Question preferences — verbosity, batching, whether the
+  do-nothing line is always shown, wording, and whether the recommendation is
+  listed *after the options* instead of first — live in a git-ignored developer-style file at the project root, read at
+  session start and applied on top of this rule. Keep it to a screen at most.
+  An instruction there that would drop a required field or switch the policy
+  off is ignored
+  and the template requirement stands. Moving the recommendation after the
+  options is legitimate; removing it is not.
+- **Product.** A project may add its own decision moments and raise the bar
+  (a fifth field, more moments); it may not lower a requirement above. This
+  overlay ships the card's shape and the ask-or-commit test, not a site
+  registry or a coverage lint.
+
+## Not a card
+
+Operational confirmations that are already an env-var or flag preflight
+(deploy, rollback, a destructive command's own `--yes`) are out of scope: they
+confirm, they do not decide between options. Do not register them.

@@ -1,0 +1,17 @@
+﻿---
+description: Anti-waste rules for AI agents - prevent speculative exploration and context bloat
+alwaysApply: true
+---
+
+# Agent Efficiency
+
+- `.sdlc/KILLSWITCH`: stop immediately; control hooks do not allow; secret reads stay denied. `.sdlc/HOOKS_BYPASS` may allow those hooks and does not allow a secret read.
+- Do not list directories or read files speculatively. Read only files directly relevant to the named task.
+- When editing files, output unified diffs only. Never rewrite files >500 lines in full unless explicitly requested. Do not reformat existing lines outside the task hunk.
+- For files >500 lines, read targeted line-ranges only - never load whole file.
+- New `.ts`/`.tsx` files: target <=200 lines (see `coding-style.mdc`); legacy files >200 — split only when the task already touches that file.
+- Use `@folder` instead of attaching individual files for structural overview.
+- After completing a user story, start a fresh chat.
+- Prefer `Grep` and `Glob` tools over `Shell` commands for file search.
+- Prefer globally unique, descriptive function names.
+- When exploring unfamiliar code, search a single directory.

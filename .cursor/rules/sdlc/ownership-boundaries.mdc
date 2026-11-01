@@ -1,0 +1,36 @@
+---
+description: Ownership boundaries — respect CODEOWNERS, refuse cross-boundary edits
+alwaysApply: true
+---
+
+# Ownership Boundaries
+
+## CODEOWNERS
+
+Before modifying any file, check if a CODEOWNERS file exists at the project root.
+
+- If the file being modified has an owner that is NOT you/your team: **REFUSE** the edit
+- Explain which team owns the file and suggest they make the change
+- If no CODEOWNERS file exists: all files are open (default for small teams)
+
+## Governance Files (Never Modify Without Permission)
+
+These files require explicit human request to modify:
+
+- `.cursor/rules/sdlc/*` — overlay governance rules
+- `.copier-answers.sdlc.yml` — overlay configuration
+- `.sdlc/trust-ledger.json` — trust scoring
+- `.sdlc/KILLSWITCH` — only humans create/remove this
+- `AGENTS.md` — agent instructions (suggest edits, don't apply)
+
+## Cross-Module Boundaries
+
+If the project has clear module boundaries (packages/, services/, apps/):
+
+- Stay within the module relevant to the current task
+- If a change requires touching another module, flag it and ask
+- Never make "while I'm here" improvements in adjacent modules
+
+## Verification Command
+
+After any edit, confirm the change doesn't break anything: `make verify`

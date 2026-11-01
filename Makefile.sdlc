@@ -1,0 +1,87 @@
+# Makefile.sdlc — AI SDLC overlay targets
+# Include from your main Makefile: include Makefile.sdlc
+
+.PHONY: sdlc-verify sdlc-update sdlc-status sdlc-health sdlc-killswitch sdlc-resume sdlc-version sdlc-apply-ignore sdlc-remove-ignore
+
+sdlc-apply-ignore: ## Apply .gitignore.sdlc using tracking_mode from .copier-answers.sdlc.yml
+	@command -v python3 >/dev/null 2>&1 && PY=python3 || PY=python; \
+	$$PY .sdlc/scripts/sdlc-apply-gitignore.py
+
+sdlc-remove-ignore: ## Remove ai-sdlc-overlay marker blocks from .gitignore and .git/info/exclude
+	@command -v python3 >/dev/null 2>&1 && PY=python3 || PY=python; \
+	$$PY .sdlc/scripts/sdlc-apply-gitignore.py --remove
+
+sdlc-verify: ## Run project verification (make verify)
+	make verify
+
+sdlc-update: ## Update the AI SDLC overlay from saas-constitution
+	copier update --trust -a .copier-answers.sdlc.yml
+
+sdlc-status: ## Show overlay version and configuration
+	@echo "=== AI SDLC Overlay Status ==="
+	@grep "_commit" .copier-answers.sdlc.yml 2>/dev/null || echo "Not installed"
+	@echo ""
+	@echo "Autonomy: L3-act-with-approval"
+	@echo "Verification: make verify"
+	@echo ""
+	@if [ -f .sdlc/KILLSWITCH ]; then echo "⚠️  KILL SWITCH ACTIVE"; else echo "Status: Normal"; fi
+
+sdlc-version: ## Show installed overlay version (commit hash)
+	@grep "_commit" .copier-answers.sdlc.yml 2>/dev/null | awk '{print $$2}' || echo "Not installed"
+
+sdlc-health: ## Verify overlay integrity — check all expected files exist
+	@echo "Checking AI SDLC overlay integrity..."
+	@MISSING=0; \
+	for f in \
+		.copier-answers.sdlc.yml \
+		.gitignore.sdlc \
+		.sdlc/scripts/sdlc-apply-gitignore.py \
+		.cursor/rules/sdlc/overlay-status.mdc \
+		.cursor/rules/sdlc/verification-loop.mdc \
+		.cursor/rules/sdlc/agent-autonomy.mdc \
+		.cursor/rules/sdlc/safety-invariants.mdc \
+		.cursor/rules/sdlc/session-protocol.mdc \
+		.cursor/rules/sdlc/ownership-boundaries.mdc \
+		.cursor/rules/sdlc/automation-behavior.mdc \
+		.cursor/rules/sdlc/agent-efficiency.mdc \
+		.cursor/rules/sdlc/anti-hallucination.mdc \
+		.cursor/rules/sdlc/planning.mdc \
+		.cursor/rules/sdlc/spec-driven.mdc \
+		.cursor/rules/sdlc/compound-learnings.mdc \
+		.sdlc/context/project-overview.md \
+		.sdlc/context/conventions.md \
+		.sdlc/trust-ledger.json \
+		AGENTS.md \
+	; do \
+		if [ ! -f "$$f" ]; then \
+			echo "  MISSING: $$f"; \
+			MISSING=$$((MISSING + 1)); \
+		fi; \
+	done; \
+	if [ $$MISSING -eq 0 ]; then \
+		echo "✓ All core files present"; \
+	else \
+		echo "✗ $$MISSING files missing — run: copier update --trust -a .copier-answers.sdlc.yml"; \
+		exit 1; \
+	fi
+	@echo ""
+	@echo "Context files populated:"
+	@if [ -s .sdlc/context/project-overview.md ] && grep -qv "^#\|^>" .sdlc/context/project-overview.md 2>/dev/null; then \
+		echo "  ✓ project-overview.md (has content)"; \
+	else \
+		echo "  ⚠ project-overview.md (needs filling)"; \
+	fi
+	@if [ -s .sdlc/context/conventions.md ] && grep -qv "^#\|^>\|^<!--" .sdlc/context/conventions.md 2>/dev/null; then \
+		echo "  ✓ conventions.md (has content)"; \
+	else \
+		echo "  ⚠ conventions.md (needs filling)"; \
+	fi
+
+sdlc-killswitch: ## Activate kill switch — all agents stop
+	@touch .sdlc/KILLSWITCH
+	@echo "Kill switch activated. All agent operations blocked."
+	@echo "Remove with: make sdlc-resume"
+
+sdlc-resume: ## Deactivate kill switch — agents resume
+	@rm -f .sdlc/KILLSWITCH
+	@echo "Kill switch removed. Agent operations resumed."

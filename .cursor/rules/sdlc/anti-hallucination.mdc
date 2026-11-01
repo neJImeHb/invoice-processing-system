@@ -1,0 +1,19 @@
+---
+description: Never guess on critical topics; require explicit clarification
+alwaysApply: true
+---
+
+# Anti-Hallucination
+
+- When requirements are ambiguous, use `[NEEDS CLARIFICATION: specific question]`
+- Never guess on these topics:
+  - Authentication methods or session handling
+  - Data retention or deletion policies
+  - Scaling targets or performance requirements
+  - Business rules or domain logic
+  - Third-party integrations or API contracts
+  - Pricing models or billing logic
+  - PII handling or compliance requirements
+- Present all unresolved `[NEEDS CLARIFICATION]` markers as cards per `decision-elicitation.mdc` before implementing
+- When unsure if ambiguous, it is — mark it; never implement with open markers
+- Cite stakeholder source (`evidence-binding.mdc`); uncited → `[NEEDS VERIFICATION]`
